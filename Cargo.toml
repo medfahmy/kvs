@@ -1,0 +1,12 @@
+[package]
+name = "kvs"
+version = "0.1.0"
+edition = "2021"
+authors = ["Med Fahmy <medfahmy99@gmail.com>"]
+description = "a key-value in-memory store"
+
+[dependencies]
+
+[[bin]]
+name = "kvs"
+test = false
