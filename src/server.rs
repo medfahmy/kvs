@@ -1,6 +1,7 @@
 use std::net::{TcpListener, TcpStream};
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
+use std::process;
 
 type Job = Box<dyn FnOnce() + Send + 'static>;
 
@@ -39,7 +40,7 @@ impl Worker {
 
 pub struct ThreadPool {
     workers: Vec<Worker>,
-    sender: mpsc::Sender<Message>
+    sender: mpsc::Sender<Message>,
 }
 
 impl ThreadPool {
@@ -61,40 +62,57 @@ impl ThreadPool {
 
     fn execute<F>(&self, f: F)
     where
-        F: FnOnce() + Send + 'static
+        F: FnOnce() + Send + 'static,
     {
         let job = Box::new(f);
-        self.sender.send(Message::NewJob(job)).unwrap();
+        self.sender.send(Message::NewJob(job)).unwrap_or_else(|err| {
+            eprintln!("error sending job to workers: {}", err);
+            process::exit(1);
+        });
     }
 }
 
 impl Drop for ThreadPool {
     fn drop(&mut self) {
         println!("sending terminate message to all workers");
+
         for _ in &self.workers {
             self.sender.send(Message::Terminate).unwrap();
         }
 
         println!("shutting down all workers");
+
         for worker in &mut self.workers {
             println!("shutting down worker {}", worker.id);
+
             if let Some(thread) = worker.thread.take() {
-                thread.join().unwrap();
+                thread.join().unwrap_or_else(|err| {
+                    eprintln!(
+                        "error shutting down worker {}: {:?}.\n exiting process.",
+                        worker.id, 
+                        err
+                    );
+                    process::exit(1);
+                });
             }
         }
     }
 }
 
-fn handle_connection(mut stream: TcpStream) {
-    
-}
+fn handle_connection(mut stream: TcpStream) {}
 
 pub fn create_server(port: usize) {
     let listener = TcpListener::bind(format!("127.0.0.1:{}", port)).unwrap();
     let pool = ThreadPool::new(4);
 
     for stream in listener.incoming().take(2) {
-        let stream = stream.unwrap();
+        let stream = stream.unwrap_or_else(|err| {
+            eprintln!(
+                "error reading tcp stream {}.\n aborting server creation.",
+                err
+            );
+            process::exit(1);
+        });
         pool.execute(|| handle_connection(stream));
     }
 }
