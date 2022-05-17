@@ -52,17 +52,14 @@ fn cli_no_args() {
 fn cli_version() {
 }
 
-// `kvs get <KEY>` should print "unimplemented" to stderr and exit with non-zero code
 #[test]
 fn cli_get() {
 }
 
-// `kvs set <KEY> <VALUE>` should print "unimplemented" to stderr and exit with non-zero code
 #[test]
 fn cli_set() {
 }
 
-// `kvs rm <KEY>` should print "unimplemented" to stderr and exit with non-zero code
 #[test]
 fn cli_rm() {
 }
