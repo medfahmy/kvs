@@ -11,7 +11,7 @@ mod tests;
 
 pub fn run_cli(args: env::Args) {
     let cmd = Command::new(args).unwrap_or_else(|err| panic!("error parsing arguments {}", err));
-    // send cmd with server
+    // send cmd to server
 }
 
 pub fn init_store() {
@@ -32,6 +32,7 @@ enum Command {
 impl Command {
     pub fn new(args: env::Args) -> Result<Command, &'static str> {
         let args: Vec<String> = args.collect();
+        // TODO: log cmds to run
         match args[1].to_lowercase().as_str() {
             "get" => {
                 if args.len() != 3 {
