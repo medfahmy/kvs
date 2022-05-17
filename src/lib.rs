@@ -11,10 +11,12 @@ mod tests;
 
 pub fn run_cli(args: env::Args) {
     let cmd = Command::new(args).unwrap_or_else(|err| panic!("error parsing arguments {}", err));
+    // communicate cmd with server
 }
 
 pub fn init_store() {
     let kvs = KvStore::new();
+    // run server
 }
 
 
