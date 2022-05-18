@@ -2,6 +2,7 @@ use std::net::{TcpListener, TcpStream};
 use std::process;
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
+use std::io::Read;
 
 type Job = Box<dyn FnOnce() + Send + 'static>;
 
@@ -100,7 +101,12 @@ impl Drop for ThreadPool {
     }
 }
 
-fn handle_connection(mut stream: TcpStream) {}
+fn handle_connection(mut stream: TcpStream) {
+    let mut buffer = [0; 1024];
+    stream.read(&mut buffer).unwrap();
+    
+    println!("request: {}", String::from_utf8_lossy(&buffer));
+}
 
 pub fn create_server(port: usize) {
     let listener = TcpListener::bind(format!("127.0.0.1:{}", port)).unwrap_or_else(|err| {
