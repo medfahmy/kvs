@@ -1,7 +1,7 @@
 use std::net::{TcpListener, TcpStream};
+use std::process;
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
-use std::process;
 
 type Job = Box<dyn FnOnce() + Send + 'static>;
 
@@ -65,10 +65,12 @@ impl ThreadPool {
         F: FnOnce() + Send + 'static,
     {
         let job = Box::new(f);
-        self.sender.send(Message::NewJob(job)).unwrap_or_else(|err| {
-            eprintln!("error sending job to workers: {}", err);
-            process::exit(1);
-        });
+        self.sender
+            .send(Message::NewJob(job))
+            .unwrap_or_else(|err| {
+                eprintln!("error sending job to workers: {}", err);
+                process::exit(1);
+            });
     }
 }
 
@@ -89,8 +91,7 @@ impl Drop for ThreadPool {
                 thread.join().unwrap_or_else(|err| {
                     eprintln!(
                         "error shutting down worker {}: {:?}.\n exiting process.",
-                        worker.id, 
-                        err
+                        worker.id, err
                     );
                     process::exit(1);
                 });
@@ -102,7 +103,13 @@ impl Drop for ThreadPool {
 fn handle_connection(mut stream: TcpStream) {}
 
 pub fn create_server(port: usize) {
-    let listener = TcpListener::bind(format!("127.0.0.1:{}", port)).unwrap();
+    let listener = TcpListener::bind(format!("127.0.0.1:{}", port)).unwrap_or_else(|err| {
+        eprintln!(
+            "error listening to port {}: {}.\n aborting server creation.",
+            port, err
+        );
+        process::exit(1);
+    });
     let pool = ThreadPool::new(4);
 
     for stream in listener.incoming().take(2) {

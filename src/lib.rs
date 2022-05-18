@@ -1,9 +1,8 @@
 use std::collections::HashMap;
 use std::{env, process};
 
-mod server;
-mod tests;
-mod utils;
+pub mod server;
+pub mod utils;
 
 // kvs set john doe
 // kvs get john => doe
@@ -15,15 +14,9 @@ pub fn run_cli(args: env::Args) {
         process::exit(1);
     });
 
-    // send cmd to server
+    // send cmd to server as tcpstream
     let mut kvs = KvStore::new(); // get kvs from other process? or pass message
     kvs.exec_cmd(cmd);
-}
-
-pub fn init_store() {
-    let kvs = KvStore::new();
-
-    // run server as background process
 }
 
 enum Command {
@@ -101,3 +94,5 @@ impl KvStore {
         }
     }
 }
+
+mod tests;
