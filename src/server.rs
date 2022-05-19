@@ -103,11 +103,10 @@ impl Drop for ThreadPool {
 }
 
 fn handle_connection(mut stream: TcpStream, kvs: &mut KvStore) {
-    let mut buffer = [0; 1024];
-    stream.read(&mut buffer).unwrap();
-    let cmd_str = String::from_utf8_lossy(&buffer);
-    let args: Vec<&str> = cmd_str.split(" ").collect();
-    let args: Vec<String> = args.iter().map(|s| s.to_string()).collect();
+    let mut buf = [0; 1024];
+    stream.read(&mut buf).unwrap();
+
+    let args: Vec<String> = String::from_utf8_lossy(&buf).split(" ").map(|s| s.to_string()).collect();
     
     let cmd = Command::new(args).unwrap_or_else(|err| {
         eprintln!("error parsing arguments: {}", err);
