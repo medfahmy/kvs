@@ -3,6 +3,7 @@ use std::process;
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
 use std::io::Read;
+use crate::{Command, KvStore, Action};
 
 type Job = Box<dyn FnOnce() + Send + 'static>;
 
@@ -101,14 +102,33 @@ impl Drop for ThreadPool {
     }
 }
 
-fn handle_connection(mut stream: TcpStream) {
+fn handle_connection(mut stream: TcpStream, kvs: &mut KvStore) {
     let mut buffer = [0; 1024];
     stream.read(&mut buffer).unwrap();
+    let cmd_str = String::from_utf8_lossy(&buffer);
+    let args: Vec<&str> = cmd_str.split(" ").collect();
+    let args: Vec<String> = args.iter().map(|s| s.to_string()).collect();
     
-    println!("request: {}", String::from_utf8_lossy(&buffer));
+    let cmd = Command::new(args).unwrap_or_else(|err| {
+        eprintln!("error parsing arguments: {}", err);
+        process::exit(1);
+    });
+
+    match kvs.exec_cmd(cmd) {
+        Action::Read(value) => {
+            if let Some(value) = value {
+                println!("{}", value);
+            }
+        }
+        Action::Mutation => {
+            println!("successful operation");
+        }
+    }
 }
 
 pub fn create_server(port: usize) {
+    let mut kvs = KvStore::new();
+
     let listener = TcpListener::bind(format!("127.0.0.1:{}", port)).unwrap_or_else(|err| {
         eprintln!(
             "error listening to port {}: {}.\n aborting server creation.",
@@ -116,9 +136,9 @@ pub fn create_server(port: usize) {
         );
         process::exit(1);
     });
-    let pool = ThreadPool::new(4);
+    // let pool = ThreadPool::new(4);
 
-    for stream in listener.incoming().take(2) {
+    for stream in listener.incoming() {
         let stream = stream.unwrap_or_else(|err| {
             eprintln!(
                 "error reading tcp stream {}.\n aborting server creation.",
@@ -126,6 +146,7 @@ pub fn create_server(port: usize) {
             );
             process::exit(1);
         });
-        pool.execute(|| handle_connection(stream));
+        // pool.execute(move || handle_connection(stream, &mut kvs));
+        handle_connection(stream, &mut kvs);
     }
 }

@@ -8,18 +8,7 @@ pub mod utils;
 // kvs get john => doe
 // kvs rm john
 
-pub fn run_cli(args: env::Args) {
-    let cmd = Command::new(args).unwrap_or_else(|err| {
-        eprintln!("error parsing arguments: {}", err);
-        process::exit(1);
-    });
-
-    // send cmd to server as tcpstream
-    let mut kvs = KvStore::new(); // get kvs from other process? or pass message
-    kvs.exec_cmd(cmd);
-}
-
-enum Command {
+pub enum Command {
     Get(String),
     Set(String, String),
     Rm(String),
@@ -29,38 +18,37 @@ enum Command {
 // args = [target, cmd, key, value?]
 
 impl Command {
-    pub fn new(args: env::Args) -> Result<Command, &'static str> {
-        let args: Vec<String> = args.collect();
+    pub fn new(args: Vec<String>) -> Result<Command, String> {
         // TODO: log cmds to run
-        match args[1].to_lowercase().as_str() {
+        match args[0].to_lowercase().as_str() {
             "get" => {
-                if args.len() != 3 {
-                    return Err("get command: invalid arguments");
+                if args.len() != 2 {
+                    return Err("get command: invalid arguments".to_string());
                 }
-                Ok(Command::Get(args[2].clone()))
+                Ok(Command::Get(args[1].clone()))
             }
             "set" => {
-                if args.len() != 4 {
-                    return Err("set command: invalid arguments");
+                if args.len() != 3 {
+                    return Err("set command: invalid arguments".to_string());
                 }
-                Ok(Command::Set(args[2].clone(), args[3].clone()))
+                Ok(Command::Set(args[1].clone(), args[2].clone()))
             }
             "rm" => {
-                if args.len() != 3 {
-                    return Err("rm command: invalid arguments");
+                if args.len() != 2 {
+                    return Err("rm command: invalid arguments".to_string());
                 }
-                Ok(Command::Rm(args[2].clone()))
+                Ok(Command::Rm(args[1].clone()))
             }
-            _ => {
-                return Err("invalid command");
+            cmd => {
+                return Err(format!("invalid command: {}", cmd));
             }
         }
     }
 }
 
-enum Action {
+pub enum Action {
     Read(Option<String>),
-    Mutation(()),
+    Mutation
 }
 
 pub struct KvStore {
@@ -89,8 +77,14 @@ impl KvStore {
     fn exec_cmd(&mut self, cmd: Command) -> Action {
         match cmd {
             Command::Get(key) => Action::Read(self.get(key)),
-            Command::Set(key, value) => Action::Mutation(self.set(key, value)),
-            Command::Rm(key) => Action::Mutation(self.remove(key)),
+            Command::Set(key, value) => {
+                self.set(key, value);
+                Action::Mutation
+            }
+            Command::Rm(key) => {
+                self.remove(key);
+                Action::Mutation
+            }
         }
     }
 }
