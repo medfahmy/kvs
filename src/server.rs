@@ -19,10 +19,6 @@ fn handle_connection<'a>(mut stream: TcpStream, kvs: &mut KvStore) -> Result<(),
             return Err(format!("error parsing arguments: {}", err));
         }
     };
-    // .unwrap_or_else(|err| {
-    //     eprintln!("error parsing arguments: {}", err);
-        
-    // });
 
     match kvs.exec_cmd(cmd) {
         Action::Read(value) => {
@@ -52,11 +48,6 @@ pub fn create_server(port: usize) -> Result<(), String> {
         }
     };
 
-    //     eprintln!(
-    //         "error listening to port {}: {}.\n aborting server creation.",
-    //         port, err
-    //     );
-    // });
     // let pool = ThreadPool::new(4);
 
     for stream in listener.incoming() {
@@ -66,12 +57,7 @@ pub fn create_server(port: usize) -> Result<(), String> {
                 return Err(format!("error reading tcp stream {:?}.\n aborting server creation", err));
             }
         };
-        //     eprintln!(
-        //         "error reading tcp stream {}.\n aborting server creation.",
-        //         err
-        //     );
-        // });
-        // pool.execute(move || handle_connection(stream, &mut kvs));
+
         match handle_connection(stream, &mut kvs) {
             Ok(()) => {},
             Err(err) => {
