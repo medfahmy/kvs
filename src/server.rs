@@ -1,17 +1,25 @@
-use crate::{Action, Command, KvStore};
+use crate::{Action, Command, KvStore, log};
 use std::io::Read;
 use std::net::{TcpListener, TcpStream};
 
 fn handle_connection<'a>(mut stream: TcpStream, kvs: &mut KvStore) -> Result<(), String> {
     let mut buf = [0; 1024];
-    stream.read(&mut buf).unwrap();
 
-    let args: Vec<String> = String::from_utf8_lossy(&buf)
+    let n = match stream.read(&mut buf) {
+        Ok(n) => n,
+        Err(err) => {
+            log::error(&err);
+            return Err(format!("error reading tcp stream to buffer: {:?}", err));
+        }
+    };
+
+    let args: Vec<String> = String::from_utf8_lossy(&buf[0..n])
+        .trim()
         .split(" ")
         .map(|s| s.to_string())
         .collect();
 
-    println!("command args: {:?}", args);
+    log::info(format!("received command: {:?}", args));
 
     let cmd = match Command::new(args) {
         Ok(cmd) => cmd,
@@ -24,15 +32,15 @@ fn handle_connection<'a>(mut stream: TcpStream, kvs: &mut KvStore) -> Result<(),
         Action::Read(value) => {
             match value {
                 Some(value) => {
-                    println!("value: {}", value);
+                    log::info(format!("value: {}", value));
                 }
                 None => {
-                    println!("key is not stored");
+                    log::warn("key is not stored");
                 }
             }
         }
         Action::Mutation => {
-            println!("successful operation");
+            log::info("successful operation");
         }
     };
 
@@ -47,6 +55,8 @@ pub fn create_server(port: usize) -> Result<(), String> {
             return Err(format!("error listening to port {}: {:?}.\n aborting server creation", port, err));
         }
     };
+
+    log::info(format!("kvs server listening on port {}", port));
 
     // let pool = ThreadPool::new(4);
 

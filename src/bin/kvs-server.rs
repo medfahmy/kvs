@@ -1,7 +1,7 @@
-use kvs::{server::create_server, KvStore};
+use kvs::server::create_server;
 use kvs::log;
 
 fn main() {
-    // create_server(7878);
-    log::warn("hello");
+    let port = 7878;
+    create_server(port).unwrap_or_else(|err| log::error(err));
 }
