@@ -1,8 +1,9 @@
-use std::collections::HashMap;
-use std::{env, process};
-
+pub mod log;
 pub mod server;
+mod tests;
 pub mod utils;
+
+use std::collections::HashMap;
 
 // kvs set john doe
 // kvs get john => doe
@@ -48,7 +49,7 @@ impl Command {
 
 pub enum Action {
     Read(Option<String>),
-    Mutation
+    Mutation,
 }
 
 pub struct KvStore {
@@ -88,5 +89,3 @@ impl KvStore {
         }
     }
 }
-
-mod tests;
