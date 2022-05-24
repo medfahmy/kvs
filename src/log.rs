@@ -1,13 +1,13 @@
-use std::fmt::Debug;
+use std::fmt::Display;
 
-pub fn info<T: Debug>(data: T) {
-    println!("[INFO] {:?}", data);
+pub fn info<T: Display>(data: T) {
+    println!("[INFO] {}", data);
 }
 
-pub fn warn<T: Debug>(data: T) {
-    println!("[WARN] {:?}", data);
+pub fn warn<T: Display>(data: T) {
+    println!("[WARN] {}", data);
 }
 
-pub fn error<T: Debug>(data: T) {
-    println!("[ERROR] {:?}", data);
+pub fn error<T: Display>(data: T) {
+    println!("[ERROR] {}", data);
 }
