@@ -20,7 +20,7 @@ pub enum Command {
 
 impl Command {
     pub fn new(args: Vec<String>) -> Result<Command, String> {
-        // TODO: log cmds to run
+        // TODO: log cmds to run in a file
         match args[0].to_lowercase().as_str() {
             "get" => {
                 if args.len() != 2 {
