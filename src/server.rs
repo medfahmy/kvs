@@ -1,11 +1,11 @@
-use crate::{Action, Command, KvStore, log};
-use std::io::Read;
+use crate::{Action, Command, KvStore, threadpool::ThreadPool, log};
+use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 
-fn handle_connection<'a>(mut stream: TcpStream, kvs: &mut KvStore) -> Result<(), String> {
+fn handle_connection(mut stream: TcpStream, kvs: &mut KvStore) -> Result<(), String> {
     let mut buf = [0; 1024];
 
-    let n = match stream.read(&mut buf) {
+    let length = match stream.read(&mut buf) {
         Ok(n) => n,
         Err(err) => {
             log::error(&err);
@@ -13,7 +13,7 @@ fn handle_connection<'a>(mut stream: TcpStream, kvs: &mut KvStore) -> Result<(),
         }
     };
 
-    let args: Vec<String> = String::from_utf8_lossy(&buf[0..n])
+    let args: Vec<String> = String::from_utf8_lossy(&buf[0..length])
         .trim()
         .split(" ")
         .map(|s| s.to_string())
@@ -33,6 +33,7 @@ fn handle_connection<'a>(mut stream: TcpStream, kvs: &mut KvStore) -> Result<(),
             match value {
                 Some(value) => {
                     log::info(format!("value: {}", value));
+                    stream.write(value.as_bytes()).unwrap();
                 }
                 None => {
                     log::warn("key is not stored");
@@ -43,6 +44,8 @@ fn handle_connection<'a>(mut stream: TcpStream, kvs: &mut KvStore) -> Result<(),
             log::info("successful operation");
         }
     };
+
+    stream.flush().unwrap();
 
     Ok(())
 }
@@ -58,7 +61,7 @@ pub fn create_server(port: usize) -> Result<(), String> {
 
     log::info(format!("kvs server listening on port {}", port));
 
-    // let pool = ThreadPool::new(4);
+    let pool = ThreadPool::new(4);
 
     for stream in listener.incoming() {
         let stream = match stream {
@@ -68,10 +71,21 @@ pub fn create_server(port: usize) -> Result<(), String> {
             }
         };
 
+        // todo!("handle connections using thread pool");
+
+        // match pool.execute(|| handle_connection(stream, &mut kvs).unwrap()) {
+        //     Ok(()) => {},
+        //     Err(err) => {
+        //         log::error(format!("error handling connection by pool: {}", err));
+        //         return Err(format!("error handling connection by pool: {}", err));
+        //     }
+        // };
+
         match handle_connection(stream, &mut kvs) {
             Ok(()) => {},
             Err(err) => {
-                return Err(err);
+                log::error(format!("error handling connection by pool: {}", err));
+                return Err(format!("error handling connection by pool: {}", err));
             }
         }
     }

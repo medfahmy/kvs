@@ -2,6 +2,8 @@ use std::process;
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
 
+use crate::log;
+
 type Job = Box<dyn FnOnce() + Send + 'static>;
 
 enum Message {
@@ -45,7 +47,7 @@ pub struct ThreadPool {
 impl ThreadPool {
     // pub fn new(size: usize) -> Result<ThreadPool, PoolCreationError> {}
 
-    fn new(size: usize) -> Self {
+    pub fn new(size: usize) -> Self {
         assert!(size > 0);
 
         let (sender, receiver) = mpsc::channel();
@@ -59,17 +61,20 @@ impl ThreadPool {
         ThreadPool { workers, sender }
     }
 
-    fn execute<F>(&self, f: F)
+    pub fn execute<F>(&self, f: F) -> Result<(), String>
     where
         F: FnOnce() + Send + 'static,
     {
         let job = Box::new(f);
-        self.sender
-            .send(Message::NewJob(job))
-            .unwrap_or_else(|err| {
-                eprintln!("error sending job to workers: {}", err);
-                process::exit(1);
-            });
+        match self.sender.send(Message::NewJob(job)) {
+            Ok(()) => {
+                return Ok(());
+            }
+            Err(err) => {
+                log::error(format!("error sending job to workers: {}", err));
+                return Err(format!("error sending job to workers: {}", err));
+            }
+        }
     }
 }
 

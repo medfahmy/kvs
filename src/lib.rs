@@ -1,6 +1,7 @@
 pub mod log;
 pub mod server;
 mod tests;
+mod threadpool;
 pub mod utils;
 
 use std::collections::HashMap;
