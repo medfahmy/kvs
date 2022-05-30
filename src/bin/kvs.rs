@@ -1,15 +1,10 @@
-use std::env;
-use std::net::TcpStream;
+use kvs::log;
 use std::io::Write;
 
-use kvs::log;
-
 fn main() {
-    let mut stream = TcpStream::connect("127.0.0.1:7878").unwrap();
+    let mut stream = std::net::TcpStream::connect("127.0.0.1:7878").unwrap();
 
-    let mut args = env::args();
-    args.next();
-    let cmd = args.collect::<Vec<String>>().join(" ");
+    let cmd = std::env::args().skip(1).collect::<Vec<String>>().join(" ");
     log::info(format!("sent command: {}", cmd));
 
     let buf = cmd.as_bytes();

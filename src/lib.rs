@@ -4,7 +4,7 @@ mod tests;
 mod threadpool;
 pub mod utils;
 
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::{Mutex, Arc}};
 
 // kvs set john doe
 // kvs get john => doe
@@ -53,27 +53,31 @@ pub enum Action {
     Mutation,
 }
 
+#[derive(Clone)]
 pub struct KvStore {
-    hashmap: HashMap<String, String>,
+    hashmap: Arc<Mutex<HashMap<String, String>>>,
 }
 
 impl KvStore {
     fn new() -> Self {
         KvStore {
-            hashmap: HashMap::new(),
+            hashmap: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
     fn get(&self, key: String) -> Option<String> {
-        self.hashmap.get(&key).cloned()
+        let locked = self.hashmap.lock().unwrap();
+        locked.get(&key).cloned()
     }
 
     fn set(&mut self, key: String, value: String) {
-        self.hashmap.insert(key, value);
+        let mut locked = self.hashmap.lock().unwrap();
+        locked.insert(key, value);
     }
 
     fn remove(&mut self, key: String) {
-        self.hashmap.remove(&key);
+        let mut locked = self.hashmap.lock().unwrap();
+        locked.remove(&key);
     }
 
     fn exec_cmd(&mut self, cmd: Command) -> Action {

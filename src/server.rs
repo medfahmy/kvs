@@ -1,4 +1,4 @@
-use crate::{Action, Command, KvStore, threadpool::ThreadPool, log};
+use crate::{log, threadpool::ThreadPool, Action, Command, KvStore};
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 
@@ -29,17 +29,15 @@ fn handle_connection(mut stream: TcpStream, kvs: &mut KvStore) -> Result<(), Str
     };
 
     match kvs.exec_cmd(cmd) {
-        Action::Read(value) => {
-            match value {
-                Some(value) => {
-                    log::info(format!("value: {}", value));
-                    stream.write(value.as_bytes()).unwrap();
-                }
-                None => {
-                    log::warn("key is not stored");
-                }
+        Action::Read(value) => match value {
+            Some(value) => {
+                log::info(format!("value: {}", value));
+                stream.write(value.as_bytes()).unwrap();
             }
-        }
+            None => {
+                log::warn("key is not stored");
+            }
+        },
         Action::Mutation => {
             log::info("successful operation");
         }
@@ -50,12 +48,16 @@ fn handle_connection(mut stream: TcpStream, kvs: &mut KvStore) -> Result<(), Str
     Ok(())
 }
 
-pub fn create_server(port: usize) -> Result<(), String> {
+pub fn run_server(port: usize) -> Result<(), String> {
     let mut kvs = KvStore::new();
+
     let listener = match TcpListener::bind(format!("127.0.0.1:{}", port)) {
         Ok(listener) => listener,
         Err(err) => {
-            return Err(format!("error listening to port {}: {:?}.\n aborting server creation", port, err));
+            return Err(format!(
+                "error listening to port {}: {:?}.\n aborting server creation",
+                port, err
+            ));
         }
     };
 
@@ -67,27 +69,32 @@ pub fn create_server(port: usize) -> Result<(), String> {
         let stream = match stream {
             Ok(stream) => stream,
             Err(err) => {
-                return Err(format!("error reading tcp stream {:?}.\n aborting server creation", err));
+                return Err(format!(
+                    "error reading tcp stream {:?}.\n aborting server creation",
+                    err
+                ));
             }
         };
 
         // todo!("handle connections using thread pool");
 
-        // match pool.execute(|| handle_connection(stream, &mut kvs).unwrap()) {
-        //     Ok(()) => {},
-        //     Err(err) => {
-        //         log::error(format!("error handling connection by pool: {}", err));
-        //         return Err(format!("error handling connection by pool: {}", err));
-        //     }
-        // };
+        let mut kvs = kvs.clone();
 
-        match handle_connection(stream, &mut kvs) {
+        match pool.execute(move || handle_connection(stream, &mut kvs).unwrap()) {
             Ok(()) => {},
             Err(err) => {
                 log::error(format!("error handling connection by pool: {}", err));
                 return Err(format!("error handling connection by pool: {}", err));
             }
-        }
+        };
+
+        // match handle_connection(stream, &mut kvs) {
+        //     Ok(()) => {}
+        //     Err(err) => {
+        //         log::error(format!("error handling connection by pool: {}", err));
+        //         return Err(format!("error handling connection by pool: {}", err));
+        //     }
+        // }
     }
 
     Ok(())

@@ -10,3 +10,7 @@ description = "a key-value in-memory store"
 [[bin]]
 name = "kvs"
 test = false
+
+[[bin]]
+name = "kvs-server"
+test = false
