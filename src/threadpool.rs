@@ -1,8 +1,7 @@
+use crate::log;
 use std::process;
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
-
-use crate::log;
 
 type Job = Box<dyn FnOnce() + Send + 'static>;
 

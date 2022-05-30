@@ -1,6 +1,6 @@
-use std::process;
-use kvs::server::run_server;
 use kvs::log;
+use kvs::server::run_server;
+use std::process;
 
 const PORT: usize = 7878;
 

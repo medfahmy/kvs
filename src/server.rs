@@ -55,10 +55,7 @@ pub fn run_server(port: usize) -> Result<(), String> {
     let listener = match TcpListener::bind(format!("127.0.0.1:{}", port)) {
         Ok(listener) => listener,
         Err(err) => {
-            return Err(format!(
-                "error listening to port {}: {:?}",
-                port, err
-            ));
+            return Err(format!("error listening to port {}: {:?}", port, err));
         }
     };
 
@@ -70,10 +67,7 @@ pub fn run_server(port: usize) -> Result<(), String> {
         let stream = match stream {
             Ok(stream) => stream,
             Err(err) => {
-                return Err(format!(
-                    "error reading tcp stream {:?}",
-                    err
-                ));
+                return Err(format!("error reading tcp stream {:?}", err));
             }
         };
 
@@ -83,8 +77,9 @@ pub fn run_server(port: usize) -> Result<(), String> {
 
         match pool.execute(move || handle_connection(stream, &mut kvs_ref).unwrap()) {
             Ok(()) => {
-                log::info(format!("arc count: {}", Arc::strong_count(&kvs.hashmap))); // should == 2
-            },
+                log::info(format!("arc count: {}", Arc::strong_count(&kvs.hashmap)));
+                // should == 2
+            }
             Err(err) => {
                 log::error(format!("error handling connection by pool: {}", err));
                 return Err(format!("error handling connection by pool: {}", err));
