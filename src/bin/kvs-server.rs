@@ -6,7 +6,7 @@ const PORT: usize = 7878;
 
 fn main() {
     run_server(PORT).unwrap_or_else(|err| {
-        log::error(err);
+        log::error(format!("failed to run server: {}", err));
         process::exit(1);
     });
 }

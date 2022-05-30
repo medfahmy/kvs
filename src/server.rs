@@ -1,6 +1,7 @@
 use crate::{log, threadpool::ThreadPool, Action, Command, KvStore};
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
+use std::sync::Arc;
 
 fn handle_connection(mut stream: TcpStream, kvs: &mut KvStore) -> Result<(), String> {
     let mut buf = [0; 1024];
@@ -49,13 +50,13 @@ fn handle_connection(mut stream: TcpStream, kvs: &mut KvStore) -> Result<(), Str
 }
 
 pub fn run_server(port: usize) -> Result<(), String> {
-    let mut kvs = KvStore::new();
+    let kvs = KvStore::new();
 
     let listener = match TcpListener::bind(format!("127.0.0.1:{}", port)) {
         Ok(listener) => listener,
         Err(err) => {
             return Err(format!(
-                "error listening to port {}: {:?}.\n aborting server creation",
+                "error listening to port {}: {:?}",
                 port, err
             ));
         }
@@ -70,7 +71,7 @@ pub fn run_server(port: usize) -> Result<(), String> {
             Ok(stream) => stream,
             Err(err) => {
                 return Err(format!(
-                    "error reading tcp stream {:?}.\n aborting server creation",
+                    "error reading tcp stream {:?}",
                     err
                 ));
             }
@@ -78,10 +79,12 @@ pub fn run_server(port: usize) -> Result<(), String> {
 
         // todo!("handle connections using thread pool");
 
-        let mut kvs = kvs.clone();
+        let mut kvs_ref = kvs.clone();
 
-        match pool.execute(move || handle_connection(stream, &mut kvs).unwrap()) {
-            Ok(()) => {},
+        match pool.execute(move || handle_connection(stream, &mut kvs_ref).unwrap()) {
+            Ok(()) => {
+                log::info(format!("arc count: {}", Arc::strong_count(&kvs.hashmap))); // should == 2
+            },
             Err(err) => {
                 log::error(format!("error handling connection by pool: {}", err));
                 return Err(format!("error handling connection by pool: {}", err));
