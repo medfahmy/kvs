@@ -16,7 +16,7 @@ fn handle_connection(mut stream: TcpStream, kvs: &mut KvStore) -> Result<(), Str
 
     let args: Vec<String> = String::from_utf8_lossy(&buf[0..length])
         .trim()
-        .split(" ")
+        .split(' ')
         .map(|s| s.to_string())
         .collect();
 
@@ -33,7 +33,7 @@ fn handle_connection(mut stream: TcpStream, kvs: &mut KvStore) -> Result<(), Str
         Action::Read(value) => match value {
             Some(value) => {
                 log::info(format!("value: {}", value));
-                stream.write(value.as_bytes()).unwrap();
+                stream.write_all(value.as_bytes()).unwrap();
             }
             None => {
                 log::warn("key is not stored");
@@ -72,7 +72,7 @@ pub fn run_server(port: usize) -> Result<(), String> {
         };
 
         // todo!("handle connections using thread pool");
-
+        log::info(format!("arc count: {}", Arc::strong_count(&kvs.hashmap))); // should == 1
         let mut kvs_ref = kvs.clone();
 
         match pool.execute(move || handle_connection(stream, &mut kvs_ref).unwrap()) {

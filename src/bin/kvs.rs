@@ -8,5 +8,5 @@ fn main() {
     log::info(format!("sent command: {}", cmd));
 
     let buf = cmd.as_bytes();
-    stream.write(buf).unwrap();
+    stream.write_all(buf).unwrap();
 }

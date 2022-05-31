@@ -67,11 +67,11 @@ impl ThreadPool {
         let job = Box::new(f);
         match self.sender.send(Message::NewJob(job)) {
             Ok(()) => {
-                return Ok(());
+                Ok(())
             }
             Err(err) => {
                 log::error(format!("error sending job to workers: {}", err));
-                return Err(format!("error sending job to workers: {}", err));
+                Err(format!("error sending job to workers: {}", err))
             }
         }
     }
