@@ -1,9 +1,14 @@
 pub mod log;
 pub mod server;
-mod tests;
 mod threadpool;
 
-use std::{collections::HashMap, sync::{Mutex, Arc}};
+#[cfg(test)]
+mod tests;
+
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 
 // kvs set john doe
 // kvs get john => doe

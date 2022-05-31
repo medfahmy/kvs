@@ -47,7 +47,7 @@ impl ThreadPool {
     // pub fn new(size: usize) -> Result<ThreadPool, PoolCreationError> {}
 
     pub fn new(size: usize) -> Self {
-        assert!(size > 0);
+        assert!(size > 0, "pool size must be greater than 0!");
 
         let (sender, receiver) = mpsc::channel();
         let receiver = Arc::new(Mutex::new(receiver));

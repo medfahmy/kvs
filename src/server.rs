@@ -77,6 +77,7 @@ pub fn run_server(port: usize) -> Result<(), String> {
 
         match pool.execute(move || handle_connection(stream, &mut kvs_ref).unwrap()) {
             Ok(()) => {
+                log::info("handling connection");
                 log::info(format!("arc count: {}", Arc::strong_count(&kvs.hashmap)));
                 // should == 2
             }
