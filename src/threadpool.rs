@@ -3,6 +3,8 @@ use std::process;
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
 
+pub enum ThreadPoolError {}
+
 type Job = Box<dyn FnOnce() + Send + 'static>;
 
 enum Message {
@@ -66,9 +68,7 @@ impl ThreadPool {
     {
         let job = Box::new(f);
         match self.sender.send(Message::NewJob(job)) {
-            Ok(()) => {
-                Ok(())
-            }
+            Ok(()) => Ok(()),
             Err(err) => {
                 log::error(format!("error sending job to workers: {}", err));
                 Err(format!("error sending job to workers: {}", err))
