@@ -3,6 +3,10 @@ use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::sync::Arc;
 
+#[derive(Debug, Clone)]
+pub enum ServerError {
+}
+
 fn handle_connection(mut stream: TcpStream, kvs: &mut KvStore) -> Result<(), String> {
     let mut buf = [0; 1024];
 
@@ -71,15 +75,13 @@ pub fn run_server(port: usize) -> Result<(), String> {
             }
         };
 
-        // todo!("handle connections using thread pool");
-        log::info(format!("arc count: {}", Arc::strong_count(&kvs.hashmap))); // should == 1
         let mut kvs_ref = kvs.clone();
 
         match pool.execute(move || handle_connection(stream, &mut kvs_ref).unwrap()) {
             Ok(()) => {
                 log::info("handling connection");
                 log::info(format!("arc count: {}", Arc::strong_count(&kvs.hashmap)));
-                // should == 2
+                // should == 2 for 1 request
             }
             Err(err) => {
                 log::error(format!("error handling connection by pool: {}", err));

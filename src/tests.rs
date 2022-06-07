@@ -38,35 +38,3 @@ fn remove_key() {
     store.remove("key1".to_string());
     assert_eq!(store.get("key1".to_string()), None);
 }
-
-#[test]
-fn cli_no_args() {
-}
-
-#[test]
-fn cli_get() {
-}
-
-#[test]
-fn cli_set() {
-}
-
-#[test]
-fn cli_rm() {
-}
-
-#[test]
-fn cli_invalid_get() {
-}
-
-#[test]
-fn cli_invalid_set() {
-}
-
-#[test]
-fn cli_invalid_rm() {
-}
-
-#[test]
-fn cli_invalid_subcommand() {
-}

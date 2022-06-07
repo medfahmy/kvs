@@ -1,3 +1,4 @@
+pub mod errors;
 pub mod log;
 pub mod server;
 mod threadpool;
