@@ -1,7 +1,7 @@
 use crate::log;
 use std::process;
-use std::sync::{Arc, RwLock};
-use std::sync::mpsc::Receiver;
+use std::sync::{Arc, Mutex};
+use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread::{self, JoinHandle};
 
 pub enum _ThreadPoolError {}
@@ -13,24 +13,15 @@ enum Message {
     Terminate,
 }
 
-enum WorkerKind {
-    Reder,
-    Writer,
-}
-
 struct Worker {
     id: usize,
     thread: Option<JoinHandle<()>>,
-    kind: WorkerKind, 
 }
 
 impl Worker {
-    fn new(id: usize, receiver: Arc<RwLock<Receiver<Message>>>, kind: WorkerKind) -> Self {
+    fn new(id: usize, receiver: Arc<Mutex<Receiver<Message>>>) -> Self {
         let thread = thread::spawn(move || loop {
-            let message =  match kind { 
-                Writer => receiver.write().unwrap().recv().unwrap(),
-                Reader => receiver.read().unwrap().recv().unwrap(),
-            };
+            let message = receiver.lock().unwrap().recv().unwrap();
             match message {
                 Message::NewJob(job) => {
                     println!("worker {} is executing job.", id);
@@ -46,15 +37,13 @@ impl Worker {
         Worker {
             id,
             thread: Some(thread),
-            kind
         }
     }
 }
 
 pub struct ThreadPool {
-    readers: Vec<Worker>,
-    writers: Worker,
-    sender: mpsc::Sender<Message>,
+    workers: Vec<Worker>,
+    sender: Sender<Message>,
 }
 
 impl ThreadPool {
@@ -68,7 +57,7 @@ impl ThreadPool {
         let mut workers = Vec::with_capacity(size);
 
         for id in 0..size {
-            workers.push(Worker::new(id, Arc::clone(&receiver), ));
+            workers.push(Worker::new(id, Arc::clone(&receiver)));
         }
 
         ThreadPool { workers, sender }
