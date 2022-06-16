@@ -1,3 +1,5 @@
+#[derive(Debug)]
 pub enum KvsError {
-    ParseCommandError,
+    #[error("failed to parse command")]
+    ParseCommandError(String),
 }
